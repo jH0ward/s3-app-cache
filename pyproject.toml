@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "s3_app_cache"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+jsonpickle = "^2.0.0"
+
+[tool.poetry.dev-dependencies]
+pre-commit = "^2.14.0"
+black = "19.10b0"
+flake8 = "3.8.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
