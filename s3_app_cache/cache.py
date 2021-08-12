@@ -46,8 +46,8 @@ def cache_wrapper(func):
             make_refs=False,
         )
 
-        with open("/mnt/jp_debug.txt", "w") as f:
-            print(label + " Total args:\n" + pprint.pformat(json.loads(s)), file=f)
+        # with open("/mnt/jp_debug.txt", "w") as f:
+        #     print(label + " Total args:\n" + pprint.pformat(json.loads(s)), file=f)
 
         sha = hashlib.sha256(s.encode("utf-8")).hexdigest()
         cache = check_cache(sha, cache_location)
