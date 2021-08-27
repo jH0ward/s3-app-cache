@@ -8,8 +8,6 @@ import hashlib
 import inspect
 from s3_app_cache.cache_config import CacheConfig
 
-config = CacheConfig()
-
 
 def is_valid_cache_location(_path):
     return _path is not None
@@ -41,13 +39,13 @@ def cache_wrapper(func):
         #     print(label + " Total args:\n" + pprint.pformat(json.loads(s)), file=f)
 
         sha = hashlib.sha256(s).hexdigest()
-        cache = check_cache(sha, config.cache_location)
+        cache = check_cache(sha, CacheConfig().cache_location)
         if cache is not None and not invalidate_cache:
-            print(f"Returning cached value from {config.cache_location + sha}")
+            print(f"Returning cached value from {CacheConfig().cache_location + sha}")
             return cache
         value = func(*args, **kwargs)
-        print(f"Caching result to {config.cache_location + sha}")
-        cache_object(value, config.cache_location + sha)
+        print(f"Caching result to {CacheConfig().cache_location + sha}")
+        cache_object(value, CacheConfig().cache_location + sha)
         return value
 
     return inner
@@ -77,11 +75,11 @@ def cache_object(_data: Any, s3_path: str):
 
 
 def download_s3_object_to_local_file(s3_path, local_path):
-    s3_client = config.get_s3_client()
-    s3_client.download_file(config.bucket_name, s3_path, local_path)
+    s3_client = CacheConfig().get_s3_client()
+    s3_client.download_file(CacheConfig().bucket_name, s3_path, local_path)
 
 
 def upload_local_file_to_s3(local_path, s3_path):
-    s3_client = config.get_s3_client()
+    s3_client = CacheConfig().get_s3_client()
     with open(local_path, "rb") as f:
-        s3_client.upload_fileobj(f, config.bucket_name, s3_path)
+        s3_client.upload_fileobj(f, CacheConfig().bucket_name, s3_path)
