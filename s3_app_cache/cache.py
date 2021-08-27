@@ -9,10 +9,6 @@ import inspect
 from s3_app_cache.cache_config import CacheConfig
 
 
-def is_valid_cache_location(_path):
-    return _path is not None
-
-
 def cache_wrapper(func):
     @wraps(func)
     def inner(*args, **kwargs):
