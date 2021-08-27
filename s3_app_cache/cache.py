@@ -1,21 +1,12 @@
 import gzip
 import os
 import pickle
-import sys
 import tempfile
-from typing import Any, List
+from typing import Any
 from functools import wraps
-import json
 import hashlib
 import inspect
-import pprint
-import jsonpickle
-import jsonpickle.ext.numpy as jsonpickle_numpy
-import jsonpickle.ext.pandas as jsonpickle_pandas
-
-jsonpickle_numpy.register_handlers()
-jsonpickle_pandas.register_handlers()
-cache_location = "a/s3/path"
+from s3_app_cache.cache_config import CacheConfig
 
 
 def cache_wrapper(func):
@@ -38,34 +29,55 @@ def cache_wrapper(func):
 
         func_name = func.__name__
         label += func_name
-        s = jsonpickle.encode(
-            (label, fullargspec, args, kwargs),
-            unpicklable=False,
-            warn=True,
-            keys=True,
-            make_refs=False,
-        )
+        s = pickle.dumps((label, fullargspec, args, kwargs))
 
         # with open("/mnt/jp_debug.txt", "w") as f:
         #     print(label + " Total args:\n" + pprint.pformat(json.loads(s)), file=f)
 
-        sha = hashlib.sha256(s.encode("utf-8")).hexdigest()
-        cache = check_cache(sha, cache_location)
+        sha = hashlib.sha256(s).hexdigest()
+        cache = check_cache(sha, CacheConfig().cache_location)
         if cache is not None and not invalidate_cache:
-            print(f"Returning cached value from {cache_location+sha}")
+            print(
+                f"Returning cached value from {os.path.join(CacheConfig().cache_location,sha)}"
+            )
             return cache
         value = func(*args, **kwargs)
-        print(f"Caching result to {cache_location + sha}")
-        cache_object(value, cache_location + sha)
+        print(f"Caching result to {os.path.join(CacheConfig().cache_location,sha)}")
+        cache_object(value, os.path.join(CacheConfig().cache_location, sha))
         return value
 
     return inner
 
 
-def check_cache(sha: str, _cache_location: str):
-    return None
+def check_cache(sha: str, _cache_path: str):
+    if not _cache_path:
+        return None
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        try:
+            data_path = os.path.join(_cache_path, sha)
+            local_path = os.path.join(tmpdir_path, os.path.basename(data_path))
+            download_s3_object_to_local_file(data_path, local_path)
+            with gzip.open(local_path) as f:
+                data = pickle.load(f)
+        except Exception:  # catch any issue as cache miss
+            return None
+    return data
 
 
-def cache_object(val: Any, s3_path: str):
-    return None
+def cache_object(_data: Any, s3_path: str):
+    with tempfile.TemporaryDirectory() as tmpdir_path:
+        local_path = os.path.join(tmpdir_path, os.path.basename(s3_path))
+        with gzip.GzipFile(local_path, "wb") as f:
+            pickle.dump(_data, f)
+        upload_local_file_to_s3(local_path, s3_path)
 
+
+def download_s3_object_to_local_file(s3_path, local_path):
+    s3_client = CacheConfig().get_s3_client()
+    s3_client.download_file(CacheConfig().bucket_name, s3_path, local_path)
+
+
+def upload_local_file_to_s3(local_path, s3_path):
+    s3_client = CacheConfig().get_s3_client()
+    with open(local_path, "rb") as f:
+        s3_client.upload_fileobj(f, CacheConfig().bucket_name, s3_path)
