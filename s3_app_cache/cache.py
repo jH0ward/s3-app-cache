@@ -29,10 +29,11 @@ def cache_wrapper(func):
 
         func_name = func.__name__
         label += func_name
-        s = pickle.dumps((label, fullargspec, args, kwargs))
-
-        # with open("/mnt/jp_debug.txt", "w") as f:
-        #     print(label + " Total args:\n" + pprint.pformat(json.loads(s)), file=f)
+        try:
+            src = inspect.getsource(func)
+        except OSError:
+            src = "no src available"
+        s = pickle.dumps((label, src, fullargspec, args, kwargs))
 
         sha = hashlib.sha256(s).hexdigest()
         cache = check_cache(sha, CacheConfig().cache_location)
