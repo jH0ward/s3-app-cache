@@ -2,12 +2,11 @@
 name = "s3_app_cache"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["Coleman Howard <jchoward88@gmail.com>", "Matt Guan <mguan999@gmail.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
 python = ">=3.7,<3.11"
-jsonpickle = "^2.0.0"
 boto3 = "^1.18.30"
 
 [tool.poetry.dev-dependencies]
