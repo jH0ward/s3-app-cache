@@ -31,7 +31,7 @@ def cache_wrapper(func):
         label += func_name
         try:
             src = inspect.getsource(func)
-        except OSError:
+        except (OSError, TypeError):
             src = "no src available"
         s = pickle.dumps((label, src, fullargspec, args, kwargs))
 
